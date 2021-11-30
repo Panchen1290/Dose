@@ -32,6 +32,24 @@ pipeline {
                }
             }
         }
+        stage('Build Content Server') {
+          steps {
+            echo 'Building content server...'
+            script {
+              dockerImage = docker.build(contentServerImageName, "./ContentServer")
+            }
+          }
+        }
+        stage('Publish Content Server') {
+          steps {
+            script {
+              docker.withRegistry( '', registryCredential ) {
+                dockerImage.push("$BUILD_NUMBER")
+                 dockerImage.push('latest')
+              }
+            }
+          }
+        }
         stage('Test') {
             steps {
                 echo 'Testing..'
@@ -46,6 +64,8 @@ pipeline {
             steps {
                 sh "docker rmi $mainServerImageName:$BUILD_NUMBER"
                 sh "docker rmi $mainServerImageName:latest"
+                sh "docker rmi $contentServerImageName:$BUILD_NUMBER"
+                sh "docker rmi $contentServerImageName:latest"
             }
         }
     }
